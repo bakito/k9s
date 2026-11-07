@@ -116,6 +116,9 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr *model.ClusterMeta) {
 		c.layout()
 
 		context := curr.Context
+		if ct, err := c.app.Config.K9s.ActiveContext(); err == nil && ct != nil {
+			context = ct.DecorateContextName(context)
+		}
 		if ic := ui.ROIndicator(c.app.Config.IsReadOnly(), c.app.Config.K9s.UI.NoIcons); ic != "" {
 			context += " " + ic
 		}

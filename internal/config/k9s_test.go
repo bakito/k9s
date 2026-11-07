@@ -203,3 +203,34 @@ func TestK9sLogo(t *testing.T) {
 	cfg.K9s.UI.Logo = ""
 	assert.Empty(t, cfg.K9s.Logo())
 }
+
+func TestK9sDecorateContextName(t *testing.T) {
+	cfg := mock.NewMockConfig(t)
+	_, err := cfg.K9s.ActivateContext("ct-1-1")
+	require.NoError(t, err)
+
+	// No decoration set — returns name unchanged
+	assert.Equal(t, "ct-1-1", cfg.K9s.DecorateContextName("ct-1-1"))
+
+	// Set a prefix on the active context
+	ct, err := cfg.K9s.ActiveContext()
+	require.NoError(t, err)
+	ct.ContextPrefix = "⚙️ "
+	require.NoError(t, cfg.K9s.Save("ct-1-1", "cl-1", true))
+
+	// Should apply the prefix
+	assert.Equal(t, "⚙️ ct-1-1", cfg.K9s.DecorateContextName("ct-1-1"))
+
+	// Set a suffix as well
+	ct.ContextSuffix = " ⚡"
+	require.NoError(t, cfg.K9s.Save("ct-1-1", "cl-1", true))
+
+	// Should apply both prefix and suffix
+	assert.Equal(t, "⚙️ ct-1-1 ⚡", cfg.K9s.DecorateContextName("ct-1-1"))
+
+	// A context with no config returns the name unchanged
+	assert.Equal(t, "ct-1-2", cfg.K9s.DecorateContextName("ct-1-2"))
+
+	// Non-existent context returns the name unchanged
+	assert.Equal(t, "non-existent", cfg.K9s.DecorateContextName("non-existent"))
+}

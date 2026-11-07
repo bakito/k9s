@@ -227,6 +227,20 @@ func (k *K9s) ActiveContext() (*data.Context, error) {
 	return ct, err
 }
 
+// DecorateContextName decorates a context name using that context's own decoration pattern.
+// If the context has no config or no decoration pattern, returns the name unchanged.
+func (k *K9s) DecorateContextName(contextName string) string {
+	ct, err := k.ks.GetContext(contextName)
+	if err != nil {
+		return contextName
+	}
+	cfg, err := k.dir.Load(contextName, ct)
+	if err != nil || cfg.Context == nil {
+		return contextName
+	}
+	return cfg.Context.DecorateContextName(contextName)
+}
+
 func (k *K9s) setActiveConfig(c *data.Config) {
 	k.mx.Lock()
 	defer k.mx.Unlock()

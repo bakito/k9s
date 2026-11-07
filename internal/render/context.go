@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
@@ -19,10 +20,12 @@ import (
 // Context renders a K8s ConfigMap to screen.
 type Context struct {
 	Base
+	decorateFn func(string) string
+	mx         sync.RWMutex
 }
 
 // ColorerFunc colors a resource row.
-func (Context) ColorerFunc() model1.ColorerFunc {
+func (*Context) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, r *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, r)
 		if strings.Contains(strings.TrimSpace(r.Row.Fields[0]), "*") {
@@ -34,7 +37,7 @@ func (Context) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Context) Header(string) model1.Header {
+func (*Context) Header(string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: colName},
 		model1.HeaderColumn{Name: "CLUSTER"},
@@ -43,14 +46,27 @@ func (Context) Header(string) model1.Header {
 	}
 }
 
+// SetDecorateFn sets a function to decorate context names.
+func (c *Context) SetDecorateFn(fn func(string) string) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+	c.decorateFn = fn
+}
+
 // Render renders a K8s resource to screen.
-func (Context) Render(o any, _ string, r *model1.Row) error {
+func (c *Context) Render(o any, _ string, r *model1.Row) error {
 	ctx, ok := o.(*NamedContext)
 	if !ok {
 		return fmt.Errorf("expected *NamedContext, but got %T", o)
 	}
 
 	name := ctx.Name
+	c.mx.RLock()
+	if c.decorateFn != nil {
+		name = c.decorateFn(name)
+	}
+	c.mx.RUnlock()
+
 	if ctx.IsCurrentContext(ctx.Name) {
 		name += "(*)"
 	}

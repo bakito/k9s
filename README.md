@@ -612,6 +612,9 @@ k9s:
     active: po
   featureGates:
     nodeShell: true # => Enable this feature gate to make nodeShell available on this cluster
+  # Adds a prefix and/or suffix to the context name in the UI.
+  contextPrefix: "⚙️ " # => Displays "⚙️ my-context" instead of "my-context"
+  contextSuffix: " ⚡"  # => Displays "my-context ⚡"
 ```
 
 ### Customizing the Shell Pod

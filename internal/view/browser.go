@@ -87,6 +87,14 @@ func (b *Browser) Init(ctx context.Context) error {
 	if e := b.Table.Init(ctx); e != nil {
 		return e
 	}
+
+	// Set context decoration function if available
+	if r, ok := model.Registry[b.GVR()]; ok && r.Renderer != nil {
+		if dc, ok := r.Renderer.(interface{ SetDecorateFn(func(string) string) }); ok {
+			dc.SetDecorateFn(b.app.Config.K9s.DecorateContextName)
+		}
+	}
+
 	ns := client.CleanseNamespace(b.app.Config.ActiveNamespace())
 	if dao.IsK8sMeta(b.meta) && b.app.ConOK() {
 		if _, e := b.app.factory.CanForResource(ns, b.GVR(), client.ListAccess); e != nil {

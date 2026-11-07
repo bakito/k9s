@@ -13,15 +13,26 @@ import (
 
 // Context tracks K9s context configuration.
 type Context struct {
-	ClusterName  string       `yaml:"cluster,omitempty"`
-	ReadOnly     *bool        `yaml:"readOnly,omitempty"`
-	Skin         string       `yaml:"skin,omitempty"`
-	Logo         string       `yaml:"logo,omitempty"`
-	Namespace    *Namespace   `yaml:"namespace"`
-	View         *View        `yaml:"view"`
-	FeatureGates FeatureGates `yaml:"featureGates"`
-	Proxy        *Proxy       `yaml:"proxy"`
-	mx           sync.RWMutex
+	ClusterName   string       `yaml:"cluster,omitempty"`
+	ReadOnly      *bool        `yaml:"readOnly,omitempty"`
+	Skin          string       `yaml:"skin,omitempty"`
+	Logo          string       `yaml:"logo,omitempty"`
+	ContextPrefix string       `yaml:"contextPrefix,omitempty"`
+	ContextSuffix string       `yaml:"contextSuffix,omitempty"`
+	Namespace     *Namespace   `yaml:"namespace"`
+	View          *View        `yaml:"view"`
+	FeatureGates  FeatureGates `yaml:"featureGates"`
+	Proxy         *Proxy       `yaml:"proxy"`
+	mx            sync.RWMutex
+}
+
+// DecorateContextName applies the contextPrefix and contextSuffix to the context name.
+// If no prefix or suffix is set, returns the context name unchanged.
+func (c *Context) DecorateContextName(contextName string) string {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
+
+	return c.ContextPrefix + contextName + c.ContextSuffix
 }
 
 // NewContext creates a new cluster configuration.
